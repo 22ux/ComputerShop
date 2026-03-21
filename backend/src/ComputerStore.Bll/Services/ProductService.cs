@@ -1,0 +1,164 @@
+using ComputerStore.Bll.Dtos.Products;
+using ComputerStore.Bll.Exceptions;
+using ComputerStore.Bll.Interfaces;
+using ComputerStore.Bll.Models;
+using ComputerStore.Dal.Entities;
+using ComputerStore.Dal.Interfaces;
+using ComputerStore.Dal.QueryObjects;
+
+namespace ComputerStore.Bll.Services;
+
+public class ProductService(
+    IProductRepository productRepository,
+    ICategoryRepository categoryRepository,
+    IUnitOfWork unitOfWork) : IProductService
+{
+    public Task<PagedResult<ProductSummaryDto>> GetPublicProductsAsync(ProductFilterRequest request, CancellationToken cancellationToken = default)
+        => GetPagedAsync(request, includeDeleted: false, cancellationToken);
+
+    public Task<PagedResult<ProductSummaryDto>> GetAdminProductsAsync(ProductFilterRequest request, CancellationToken cancellationToken = default)
+        => GetPagedAsync(request, includeDeleted: true, cancellationToken);
+
+    public async Task<ProductDetailDto> GetByIdAsync(int id, bool includeDeleted = false, CancellationToken cancellationToken = default)
+    {
+        var product = await productRepository.GetByIdAsync(id, cancellationToken: cancellationToken)
+            ?? throw new AppException("Khong tim thay san pham.", 404);
+
+        if (!includeDeleted && (product.IsDeleted || product.Category?.IsDeleted == true))
+        {
+            throw new AppException("Khong tim thay san pham.", 404);
+        }
+
+        return MapDetail(product);
+    }
+
+    public async Task<IReadOnlyCollection<string>> GetBrandsAsync(CancellationToken cancellationToken = default)
+        => await productRepository.GetBrandsAsync(cancellationToken);
+
+    public async Task<ProductDetailDto> CreateAsync(ProductUpsertRequest request, CancellationToken cancellationToken = default)
+    {
+        await ValidateProductAsync(request, null, cancellationToken);
+
+        var product = new Product
+        {
+            Name = request.Name.Trim(),
+            Description = request.Description.Trim(),
+            Specification = request.Specification.Trim(),
+            Price = request.Price,
+            StockQuantity = request.StockQuantity,
+            ImageUrl = request.ImageUrl.Trim(),
+            Brand = request.Brand.Trim(),
+            CategoryId = request.CategoryId,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await productRepository.AddAsync(product, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return await GetByIdAsync(product.Id, includeDeleted: true, cancellationToken);
+    }
+
+    public async Task<ProductDetailDto> UpdateAsync(int id, ProductUpsertRequest request, CancellationToken cancellationToken = default)
+    {
+        var product = await productRepository.GetByIdAsync(id, cancellationToken: cancellationToken)
+            ?? throw new AppException("Khong tim thay san pham.", 404);
+
+        await ValidateProductAsync(request, id, cancellationToken);
+
+        product.Name = request.Name.Trim();
+        product.Description = request.Description.Trim();
+        product.Specification = request.Specification.Trim();
+        product.Price = request.Price;
+        product.StockQuantity = request.StockQuantity;
+        product.ImageUrl = request.ImageUrl.Trim();
+        product.Brand = request.Brand.Trim();
+        product.CategoryId = request.CategoryId;
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+        return await GetByIdAsync(product.Id, includeDeleted: true, cancellationToken);
+    }
+
+    public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var product = await productRepository.GetByIdAsync(id, cancellationToken: cancellationToken)
+            ?? throw new AppException("Khong tim thay san pham.", 404);
+
+        product.IsDeleted = true;
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task<PagedResult<ProductSummaryDto>> GetPagedAsync(ProductFilterRequest request, bool includeDeleted, CancellationToken cancellationToken)
+    {
+        var query = new ProductQueryOptions
+        {
+            SearchTerm = request.SearchTerm,
+            CategoryId = request.CategoryId,
+            Brand = request.Brand,
+            MinPrice = request.MinPrice,
+            MaxPrice = request.MaxPrice,
+            InStock = request.InStock,
+            SortBy = request.SortBy,
+            Page = request.Page,
+            PageSize = request.PageSize,
+            IncludeDeleted = includeDeleted
+        };
+
+        var (items, totalCount) = await productRepository.GetPagedAsync(query, cancellationToken);
+
+        return new PagedResult<ProductSummaryDto>
+        {
+            Items = items.Select(MapSummary).ToList(),
+            Page = query.Page,
+            PageSize = query.PageSize,
+            TotalCount = totalCount,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)query.PageSize)
+        };
+    }
+
+    private async Task ValidateProductAsync(ProductUpsertRequest request, int? productId, CancellationToken cancellationToken)
+    {
+        if (await productRepository.ExistsByNameAsync(request.Name, productId, cancellationToken))
+        {
+            throw new AppException("Ten san pham da ton tai.");
+        }
+
+        var category = await categoryRepository.GetByIdAsync(request.CategoryId, cancellationToken)
+            ?? throw new AppException("Danh muc khong ton tai.", 404);
+
+        if (category.IsDeleted)
+        {
+            throw new AppException("Danh muc da bi xoa mem.");
+        }
+    }
+
+    private static ProductSummaryDto MapSummary(Product product) => new()
+    {
+        Id = product.Id,
+        Name = product.Name,
+        Description = product.Description,
+        Price = product.Price,
+        StockQuantity = product.StockQuantity,
+        ImageUrl = product.ImageUrl,
+        Brand = product.Brand,
+        CategoryId = product.CategoryId,
+        CategoryName = product.Category?.Name ?? string.Empty,
+        IsDeleted = product.IsDeleted,
+        CreatedAt = product.CreatedAt
+    };
+
+    private static ProductDetailDto MapDetail(Product product) => new()
+    {
+        Id = product.Id,
+        Name = product.Name,
+        Description = product.Description,
+        Specification = product.Specification,
+        Price = product.Price,
+        StockQuantity = product.StockQuantity,
+        ImageUrl = product.ImageUrl,
+        Brand = product.Brand,
+        CategoryId = product.CategoryId,
+        CategoryName = product.Category?.Name ?? string.Empty,
+        IsDeleted = product.IsDeleted,
+        CreatedAt = product.CreatedAt
+    };
+}
