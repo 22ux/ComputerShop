@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { StoreEmptyState, StorePageHeader, StoreStatusBadge, StoreSurface } from '../components/storefront/store-ui'
 import http from '../lib/http'
-import { formatCurrency, formatDate, getErrorMessage } from '../lib/utils'
+import { formatDate, getErrorMessage } from '../lib/utils'
 import type { ReturnRequest } from '../types'
 
 export default function ReturnRequestsPage() {

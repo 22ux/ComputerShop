@@ -64,6 +64,7 @@ export default function AdminCustomersPage() {
 
   useEffect(() => {
     void loadCustomers()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const filteredCustomers = useMemo(() => {

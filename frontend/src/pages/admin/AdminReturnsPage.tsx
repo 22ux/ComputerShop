@@ -1,4 +1,4 @@
-import { CheckCircle2, XCircle, RefreshCcw, Search } from 'lucide-react'
+import { CheckCircle2, RefreshCcw, XCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import {
@@ -13,7 +13,7 @@ import {
 } from '../../components/admin/admin-ui'
 import http from '../../lib/http'
 import { formatDate, getErrorMessage } from '../../lib/utils'
-import type { ReturnRequest, InventoryItemDto } from '../../types'
+import type { ReturnRequest } from '../../types'
 
 export default function AdminReturnsPage() {
   const [requests, setRequests] = useState<ReturnRequest[]>([])

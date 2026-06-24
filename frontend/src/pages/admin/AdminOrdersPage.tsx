@@ -76,6 +76,7 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     void loadOrders()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const pendingCount = useMemo(

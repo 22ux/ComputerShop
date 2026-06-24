@@ -1,5 +1,5 @@
 import { LogOut, PackageSearch, RefreshCcw, UserCircle } from 'lucide-react'
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { cn } from '../lib/cn'
 

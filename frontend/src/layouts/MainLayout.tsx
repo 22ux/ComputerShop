@@ -47,6 +47,7 @@ export default function MainLayout() {
       ? new URLSearchParams(location.search).get('searchTerm') ?? ''
       : ''
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSearchTerm(nextSearch)
   }, [location.pathname, location.search])
 

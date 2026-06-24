@@ -5,7 +5,6 @@ import {
   StoreButton,
   StoreField,
   StoreInput,
-  StorePageHeader,
   StoreSurface,
   StoreTextarea,
   StoreStatusBadge,

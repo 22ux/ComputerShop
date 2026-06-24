@@ -4,7 +4,6 @@ import { toast } from 'sonner'
 import {
   StoreButton,
   StoreEmptyState,
-  StorePageHeader,
   StoreStatusBadge,
   StoreSurface,
 } from '../components/storefront/store-ui'
@@ -54,6 +53,7 @@ export default function OrdersPage() {
 
   useEffect(() => {
     void loadOrders()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const stats = useMemo(() => {
