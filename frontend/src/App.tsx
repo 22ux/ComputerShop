@@ -4,11 +4,14 @@ import ProtectedRoute from './components/ProtectedRoute'
 
 const AdminLayout = lazy(() => import('./layouts/AdminLayout'))
 const MainLayout = lazy(() => import('./layouts/MainLayout'))
+const AccountLayout = lazy(() => import('./layouts/AccountLayout'))
 const AdminCategoriesPage = lazy(() => import('./pages/admin/AdminCategoriesPage'))
 const AdminCustomersPage = lazy(() => import('./pages/admin/AdminCustomersPage'))
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'))
 const AdminOrdersPage = lazy(() => import('./pages/admin/AdminOrdersPage'))
 const AdminProductsPage = lazy(() => import('./pages/admin/AdminProductsPage'))
+const AdminReviewsPage = lazy(() => import('./pages/admin/AdminReviewsPage'))
+const AdminReturnsPage = lazy(() => import('./pages/admin/AdminReturnsPage'))
 const CartPage = lazy(() => import('./pages/CartPage'))
 const CheckoutPage = lazy(() => import('./pages/CheckoutPage'))
 const HomePage = lazy(() => import('./pages/HomePage'))
@@ -18,6 +21,7 @@ const ProductDetailPage = lazy(() => import('./pages/ProductDetailPage'))
 const ProductsPage = lazy(() => import('./pages/ProductsPage'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const RegisterPage = lazy(() => import('./pages/RegisterPage'))
+const ReturnRequestsPage = lazy(() => import('./pages/ReturnRequestsPage'))
 
 function App() {
   return (
@@ -33,8 +37,12 @@ function App() {
 
           <Route element={<ProtectedRoute />}>
             <Route path="checkout" element={<CheckoutPage />} />
-            <Route path="orders" element={<OrdersPage />} />
-            <Route path="profile" element={<ProfilePage />} />
+            <Route path="account" element={<AccountLayout />}>
+              <Route index element={<Navigate to="profile" replace />} />
+              <Route path="profile" element={<ProfilePage />} />
+              <Route path="orders" element={<OrdersPage />} />
+              <Route path="returns" element={<ReturnRequestsPage />} />
+            </Route>
           </Route>
         </Route>
 
@@ -46,6 +54,8 @@ function App() {
             <Route path="products" element={<AdminProductsPage />} />
             <Route path="customers" element={<AdminCustomersPage />} />
             <Route path="orders" element={<AdminOrdersPage />} />
+            <Route path="reviews" element={<AdminReviewsPage />} />
+            <Route path="returns" element={<AdminReturnsPage />} />
           </Route>
         </Route>
 

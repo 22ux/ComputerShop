@@ -19,6 +19,7 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true)
   const [detailLoading, setDetailLoading] = useState(false)
   const [cancelling, setCancelling] = useState(false)
+  const [returningProductId, setReturningProductId] = useState<number | null>(null)
 
   const loadOrderDetail = async (orderId: number) => {
     try {
@@ -79,11 +80,6 @@ export default function OrdersPage() {
 
   return (
     <div className="space-y-6">
-      <StorePageHeader
-        eyebrow="Order history"
-        title="Track your purchases with clearer order detail"
-        description="Review recent orders, inspect item-level details, and cancel eligible purchases from a cleaner account workspace."
-      />
 
       {error ? (
         <StoreSurface className="border-[#fecaca] bg-[#fef2f2] p-5 text-sm text-[#b91c1c]">
@@ -166,15 +162,46 @@ export default function OrdersPage() {
 
               <div className="space-y-3">
                 {selectedOrder.items.map((item) => (
-                  <div key={item.productId} className="flex items-start gap-4 rounded-[28px] border border-[#dceff7] p-4">
-                    <img src={item.imageUrl} alt={item.productName} className="h-20 w-20 rounded-[22px] object-cover" />
-                    <div className="min-w-0 flex-1">
-                      <div className="font-semibold text-slate-900">{item.productName}</div>
-                      <div className="mt-1 text-sm text-slate-500">
-                        {item.quantity} x {formatCurrency(item.unitPrice)}
+                  <div key={item.productId} className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between rounded-[28px] border border-[#dceff7] p-4">
+                    <div className="flex items-start gap-4 flex-1">
+                      <img src={item.imageUrl} alt={item.productName} className="h-20 w-20 rounded-[22px] object-cover" />
+                      <div className="min-w-0 flex-1">
+                        <div className="font-semibold text-slate-900">{item.productName}</div>
+                        <div className="mt-1 text-sm text-slate-500">
+                          {item.quantity} x {formatCurrency(item.unitPrice)}
+                        </div>
                       </div>
                     </div>
-                    <div className="text-sm font-semibold text-slate-900">{formatCurrency(item.subTotal)}</div>
+                    <div className="flex flex-col items-end gap-3 shrink-0">
+                      <div className="text-sm font-semibold text-slate-900">{formatCurrency(item.subTotal)}</div>
+                      {selectedOrder.status === 'Completed' && (
+                        <StoreButton
+                          variant="secondary"
+                          size="sm"
+                          disabled={returningProductId === item.productId}
+                          onClick={async () => {
+                            const reason = window.prompt(`Please enter the reason for returning ${item.productName}:`)
+                            if (!reason || reason.trim() === '') return
+                            
+                            try {
+                              setReturningProductId(item.productId)
+                              await http.post('/returnrequests', {
+                                orderId: selectedOrder.id,
+                                productId: item.productId,
+                                reason: reason
+                              })
+                              toast.success('Return request submitted successfully.')
+                            } catch (err) {
+                              toast.error(getErrorMessage(err))
+                            } finally {
+                              setReturningProductId(null)
+                            }
+                          }}
+                        >
+                          {returningProductId === item.productId ? 'Submitting...' : 'Request Return / Warranty'}
+                        </StoreButton>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

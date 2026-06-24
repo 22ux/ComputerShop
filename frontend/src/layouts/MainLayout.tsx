@@ -19,9 +19,6 @@ export default function MainLayout() {
   const navItems = [
     { to: '/', label: 'Home', show: true },
     { to: '/products', label: 'Catalog', show: true },
-    { to: '/orders', label: 'Orders', show: isAuthenticated },
-    { to: '/profile', label: 'Account', show: isAuthenticated },
-    { to: '/admin/dashboard', label: 'Admin', show: isAdmin, icon: <LayoutDashboard className="h-4 w-4" /> },
   ].filter((item) => item.show)
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
@@ -104,6 +101,16 @@ export default function MainLayout() {
             </form>
 
             <div className="flex flex-wrap items-center gap-3">
+              {isAdmin ? (
+                <Link
+                  to="/admin/dashboard"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#f3fbff] border border-[#d8edf6] px-4 py-2.5 text-sm font-semibold text-[#008ecc] transition hover:border-[#9ddaf2] hover:bg-[#e8f8ff]"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  Admin
+                </Link>
+              ) : null}
+
               <Link
                 to="/cart"
                 className="inline-flex items-center gap-2 rounded-full border border-[#d8edf6] bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-[#9ddaf2] hover:text-[#008ecc]"
@@ -117,10 +124,10 @@ export default function MainLayout() {
 
               {isAuthenticated ? (
                 <>
-                  <div className="hidden items-center gap-2 rounded-full bg-[#eff9fd] px-4 py-2.5 text-sm font-medium text-slate-700 md:inline-flex">
+                  <Link to="/account" className="hidden items-center gap-2 rounded-full bg-[#eff9fd] px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-[#e8f8ff] hover:text-[#008ecc] md:inline-flex">
                     <User className="h-4 w-4 text-[#008ecc]" />
                     {user?.fullName ?? 'Account'}
-                  </div>
+                  </Link>
                   <StoreButton variant="secondary" size="sm" onClick={logout}>
                     Sign out
                   </StoreButton>
@@ -209,8 +216,8 @@ export default function MainLayout() {
             <div>
               <h3 className="font-display text-lg font-semibold text-slate-900">Account</h3>
               <div className="mt-4 flex flex-col gap-3 text-sm text-slate-500">
-                {isAuthenticated ? <Link to="/profile">Profile</Link> : <Link to="/login">Sign in</Link>}
-                {isAuthenticated ? <Link to="/orders">Orders</Link> : <Link to="/register">Register</Link>}
+                {isAuthenticated ? <Link to="/account/profile">Profile</Link> : <Link to="/login">Sign in</Link>}
+                {isAuthenticated ? <Link to="/account/orders">Orders</Link> : <Link to="/register">Register</Link>}
                 {isAdmin ? <Link to="/admin/dashboard">Admin dashboard</Link> : null}
               </div>
             </div>

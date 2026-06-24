@@ -49,12 +49,6 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6">
-      <StorePageHeader
-        eyebrow="Account"
-        title="Profile details and security settings"
-        description="Manage the profile information used at checkout and keep account security aligned with the rest of the storefront experience."
-      />
-
       <div className="grid gap-4 lg:grid-cols-4">
         <ProfileMeta
           icon={<UserCircle2 className="h-4 w-4" />}
@@ -78,7 +72,7 @@ export default function ProfilePage() {
         />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="grid gap-6 xl:grid-cols-2">
         <StoreSurface className="p-6 sm:p-8">
           <div className="text-sm font-semibold uppercase tracking-[0.2em] text-[#008ecc]">Profile details</div>
           <h2 className="mt-3 font-display text-3xl font-semibold tracking-[-0.04em] text-slate-900">

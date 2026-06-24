@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
-import { Pencil, Plus, Shapes, Sparkles, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Shapes, Sparkles, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { AdminLoadingSkeleton } from '../../components/admin/admin-loading-skeleton'
 import { AdminPageHeader } from '../../components/admin/admin-page-header'
@@ -33,6 +33,7 @@ export default function AdminCategoriesPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [isFormVisible, setIsFormVisible] = useState(false)
 
   const loadCategories = async () => {
     try {
@@ -88,6 +89,7 @@ export default function AdminCategoriesPage() {
 
       setForm(emptyForm)
       setEditingId(null)
+      setIsFormVisible(false)
       await loadCategories()
     } catch (submitError) {
       toast.error(getErrorMessage(submitError))
@@ -125,6 +127,7 @@ export default function AdminCategoriesPage() {
               onClick={() => {
                 setEditingId(null)
                 setForm(emptyForm)
+                setIsFormVisible(true)
               }}
             >
               <Plus className="h-4 w-4" />
@@ -161,8 +164,23 @@ export default function AdminCategoriesPage() {
         />
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[390px_minmax(0,1fr)]">
-        <Card className="xl:sticky xl:top-6">
+      <div className="grid gap-5 grid-cols-1">
+        {isFormVisible ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <div className="relative w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
+              <Button
+                type="button"
+                size="icon"
+                className="absolute -right-3 -top-3 z-10 h-8 w-8 rounded-full bg-red-500 text-white shadow-md hover:bg-red-600"
+                onClick={() => {
+                  setEditingId(null)
+                  setForm(emptyForm)
+                  setIsFormVisible(false)
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <Card className="max-h-[90vh] overflow-y-auto shadow-2xl">
           <CardHeader>
             <Badge variant="warning">{editingId ? 'Editing mode' : 'Create mode'}</Badge>
             <CardTitle>{editingId ? 'Update category' : 'Create a new category'}</CardTitle>
@@ -211,14 +229,18 @@ export default function AdminCategoriesPage() {
                   onClick={() => {
                     setEditingId(null)
                     setForm(emptyForm)
+                    setIsFormVisible(false)
                   }}
                 >
-                  Reset form
+                  Cancel
                 </Button>
               </div>
             </form>
           </CardContent>
-        </Card>
+              </Card>
+            </div>
+          </div>
+        ) : null}
 
         <div className="space-y-4">
           <AdminSearchFilterBar
@@ -293,6 +315,7 @@ export default function AdminCategoriesPage() {
                             name: category.name,
                             description: category.description,
                           })
+                          setIsFormVisible(true)
                         }}
                         aria-label={`Edit ${category.name}`}
                       >

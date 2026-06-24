@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import {
+  Boxes,
   CloudUpload,
   ImageOff,
   Package2,
@@ -8,6 +9,7 @@ import {
   ScanSearch,
   ShieldAlert,
   Trash2,
+  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { AdminLoadingSkeleton } from '../../components/admin/admin-loading-skeleton'
@@ -24,16 +26,20 @@ import { Select } from '../../components/ui/select'
 import { Textarea } from '../../components/ui/textarea'
 import http from '../../lib/http'
 import { formatCurrency, getErrorMessage } from '../../lib/utils'
-import type { Category, PagedResult, Product } from '../../types'
+import type { Category, PagedResult, Product, InventoryItemDto } from '../../types'
 
 const emptyProductForm = {
   name: '',
   description: '',
   specification: '',
   price: 0,
+  oldPrice: undefined as number | undefined,
+  warrantyMonths: 24,
   stockQuantity: 0,
   imageUrl: '',
   brand: '',
+  productGroupId: '',
+  variantName: '',
   categoryId: 0,
 }
 
@@ -51,6 +57,13 @@ export default function AdminProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [stockFilter, setStockFilter] = useState<'all' | 'in-stock' | 'low-stock' | 'out-of-stock'>('all')
   const [error, setError] = useState('')
+  const [isFormVisible, setIsFormVisible] = useState(false)
+
+  const [inventoryProductId, setInventoryProductId] = useState<number | null>(null)
+  const [inventoryItems, setInventoryItems] = useState<InventoryItemDto[]>([])
+  const [loadingInventory, setLoadingInventory] = useState(false)
+  const [serialInput, setSerialInput] = useState('')
+  const [submittingInventory, setSubmittingInventory] = useState(false)
 
   const loadData = async () => {
     try {
@@ -127,6 +140,7 @@ export default function AdminProductsPage() {
 
       setEditingId(null)
       setForm(emptyProductForm)
+      setIsFormVisible(false)
       await loadData()
     } catch (submitError) {
       toast.error(getErrorMessage(submitError))
@@ -151,6 +165,55 @@ export default function AdminProductsPage() {
       toast.error(getErrorMessage(uploadError))
     } finally {
       setUploading(false)
+    }
+  }
+
+  const loadInventory = async (productId: number) => {
+    try {
+      setLoadingInventory(true)
+      const { data } = await http.get<InventoryItemDto[]>(`/admin/products/${productId}/inventory`)
+      setInventoryItems(data)
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setLoadingInventory(false)
+    }
+  }
+
+  const handleOpenInventory = (productId: number) => {
+    setInventoryProductId(productId)
+    setSerialInput('')
+    void loadInventory(productId)
+  }
+
+  const handleCloseInventory = () => {
+    setInventoryProductId(null)
+    setInventoryItems([])
+    setSerialInput('')
+  }
+
+  const handleAddStock = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!inventoryProductId) return
+    const serials = serialInput.split('\n').map(s => s.trim()).filter(s => s.length > 0)
+    if (serials.length === 0) {
+      toast.error('Vui lòng nhập ít nhất 1 số Seri.')
+      return
+    }
+
+    try {
+      setSubmittingInventory(true)
+      await http.post(`/admin/products/${inventoryProductId}/inventory/add-stock`, {
+        serialNumbers: serials
+      })
+      toast.success(`Đã thêm ${serials.length} sản phẩm vào kho.`)
+      setSerialInput('')
+      await loadInventory(inventoryProductId)
+      void loadData()
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setSubmittingInventory(false)
     }
   }
 
@@ -185,6 +248,7 @@ export default function AdminProductsPage() {
               onClick={() => {
                 setEditingId(null)
                 setForm(emptyProductForm)
+                setIsFormVisible(true)
               }}
             >
               <Plus className="h-4 w-4" />
@@ -221,8 +285,23 @@ export default function AdminProductsPage() {
         />
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[420px_minmax(0,1fr)]">
-        <Card className="xl:sticky xl:top-6">
+      <div className="grid gap-5 grid-cols-1">
+        {isFormVisible ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <div className="relative w-full max-w-xl animate-in fade-in zoom-in-95 duration-200">
+              <Button
+                type="button"
+                size="icon"
+                className="absolute -right-3 -top-3 z-10 h-8 w-8 rounded-full bg-red-500 text-white shadow-md hover:bg-red-600"
+                onClick={() => {
+                  setEditingId(null)
+                  setForm(emptyProductForm)
+                  setIsFormVisible(false)
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <Card className="max-h-[90vh] overflow-y-auto shadow-2xl">
           <CardHeader>
             <Badge variant={editingId ? 'info' : 'warning'}>
               {editingId ? 'Editing product' : 'Create product'}
@@ -271,12 +350,32 @@ export default function AdminProductsPage() {
                     required
                   />
                 </Field>
+                <Field label="Old price (optional)">
+                  <Input
+                    type="number"
+                    min={0}
+                    value={form.oldPrice || ''}
+                    onChange={(event) => setForm({ ...form, oldPrice: event.target.value ? Number(event.target.value) : undefined })}
+                  />
+                </Field>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Stock quantity">
                   <Input
                     type="number"
                     min={0}
                     value={form.stockQuantity}
                     onChange={(event) => setForm({ ...form, stockQuantity: Number(event.target.value) })}
+                    required
+                  />
+                </Field>
+                <Field label="Warranty (months)">
+                  <Input
+                    type="number"
+                    min={0}
+                    value={form.warrantyMonths}
+                    onChange={(event) => setForm({ ...form, warrantyMonths: Number(event.target.value) })}
                     required
                   />
                 </Field>
@@ -304,6 +403,23 @@ export default function AdminProductsPage() {
                       </option>
                     ))}
                   </Select>
+                </Field>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Product Group ID (Optional)">
+                  <Input
+                    value={form.productGroupId}
+                    onChange={(event) => setForm({ ...form, productGroupId: event.target.value })}
+                    placeholder="E.g., dell-g15-5530"
+                  />
+                </Field>
+                <Field label="Variant Name (Optional)">
+                  <Input
+                    value={form.variantName}
+                    onChange={(event) => setForm({ ...form, variantName: event.target.value })}
+                    placeholder="E.g., RAM 8GB - SSD 512GB"
+                  />
                 </Field>
               </div>
 
@@ -342,9 +458,10 @@ export default function AdminProductsPage() {
                   onClick={() => {
                     setEditingId(null)
                     setForm(emptyProductForm)
+                    setIsFormVisible(false)
                   }}
                 >
-                  Reset form
+                  Cancel
                 </Button>
               </div>
 
@@ -394,7 +511,10 @@ export default function AdminProductsPage() {
               </div>
             </form>
           </CardContent>
-        </Card>
+              </Card>
+            </div>
+          </div>
+        ) : null}
 
         <div className="space-y-4">
           <AdminSearchFilterBar
@@ -504,6 +624,15 @@ export default function AdminProductsPage() {
                         type="button"
                         variant="ghost"
                         size="icon"
+                        onClick={() => handleOpenInventory(product.id)}
+                        aria-label={`Manage inventory for ${product.name}`}
+                      >
+                        <Boxes className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => {
                           setEditingId(product.id)
                           setForm({
@@ -511,11 +640,16 @@ export default function AdminProductsPage() {
                             description: product.description,
                             specification: product.specification ?? '',
                             price: product.price,
+                            oldPrice: product.oldPrice,
+                            warrantyMonths: product.warrantyMonths ?? 24,
                             stockQuantity: product.stockQuantity,
                             imageUrl: product.imageUrl,
                             brand: product.brand,
+                            productGroupId: product.productGroupId ?? '',
+                            variantName: product.variantName ?? '',
                             categoryId: product.categoryId,
                           })
+                          setIsFormVisible(true)
                         }}
                         aria-label={`Edit ${product.name}`}
                       >
@@ -540,6 +674,74 @@ export default function AdminProductsPage() {
           )}
         </div>
       </div>
+
+      {inventoryProductId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="relative w-full max-w-3xl animate-in fade-in zoom-in-95 duration-200">
+            <Button
+              type="button"
+              size="icon"
+              className="absolute -right-3 -top-3 z-10 h-8 w-8 rounded-full bg-red-500 text-white shadow-md hover:bg-red-600"
+              onClick={handleCloseInventory}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <Card className="max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col xl:flex-row">
+              <div className="flex-1 p-6 border-b xl:border-b-0 xl:border-r border-slate-200">
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">Nhập kho (Add Stock)</h3>
+                <p className="text-sm text-slate-500 mb-4">Nhập các số seri của sản phẩm, mỗi số trên 1 dòng.</p>
+                <form onSubmit={handleAddStock} className="space-y-4">
+                  <Textarea
+                    className="min-h-[200px] font-mono text-sm"
+                    placeholder="SN10001&#10;SN10002&#10;SN10003"
+                    value={serialInput}
+                    onChange={(e) => setSerialInput(e.target.value)}
+                  />
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-medium text-slate-500">
+                      Đã nhập: {serialInput.split('\n').filter(s => s.trim().length > 0).length} số seri
+                    </div>
+                    <Button type="submit" disabled={submittingInventory}>
+                      {submittingInventory ? 'Đang lưu...' : 'Nhập kho'}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+              <div className="flex-1 p-6 bg-slate-50">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Lịch sử tồn kho</h3>
+                {loadingInventory ? (
+                  <div className="text-sm text-slate-500">Đang tải...</div>
+                ) : inventoryItems.length === 0 ? (
+                  <div className="text-sm text-slate-500">Chưa có dữ liệu tồn kho.</div>
+                ) : (
+                  <div className="max-h-[300px] overflow-y-auto border border-slate-200 rounded-xl bg-white">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-slate-50 sticky top-0 border-b border-slate-200">
+                        <tr>
+                          <th className="px-4 py-2 font-medium text-slate-500">Số Seri</th>
+                          <th className="px-4 py-2 font-medium text-slate-500">Trạng thái</th>
+                          <th className="px-4 py-2 font-medium text-slate-500">Ngày nhập</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {inventoryItems.map(item => (
+                          <tr key={item.id} className="hover:bg-slate-50">
+                            <td className="px-4 py-2 font-mono text-slate-700">{item.serialNumber}</td>
+                            <td className="px-4 py-2">
+                              <Badge variant={item.status === 'InStock' ? 'success' : 'muted'}>{item.status}</Badge>
+                            </td>
+                            <td className="px-4 py-2 text-slate-500">{new Date(item.importDate).toLocaleDateString('vi-VN')}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

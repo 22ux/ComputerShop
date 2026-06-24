@@ -30,19 +30,64 @@ export interface Category {
   isDeleted: boolean
 }
 
+export interface ProductImage {
+  id: number
+  imageUrl: string
+  displayOrder: number
+}
+
+export interface ProductAttribute {
+  id: number
+  attributeName: string
+  attributeValue: string
+}
+
+export interface Review {
+  id: number
+  userId: number
+  userFullName: string
+  rating: number
+  comment: string
+  createdAt: string
+}
+
+export interface ProductVariant {
+  id: number
+  variantName: string
+  price: number
+  oldPrice?: number
+  imageUrl: string
+}
+
 export interface Product {
   id: number
   name: string
   description: string
   specification?: string
   price: number
+  oldPrice?: number
+  warrantyMonths?: number
   stockQuantity: number
   imageUrl: string
   brand: string
+  productGroupId?: string
+  variantName?: string
   categoryId: number
   categoryName: string
   isDeleted: boolean
   createdAt: string
+  averageRating?: number
+  images?: ProductImage[]
+  attributes?: ProductAttribute[]
+  reviews?: Review[]
+  variants?: ProductVariant[]
+}
+
+export interface InventoryItemDto {
+  id: number
+  serialNumber: string
+  status: string
+  importDate: string
 }
 
 export interface CartItem {
@@ -131,4 +176,16 @@ export interface TopProduct {
 export interface StatusBreakdown {
   status: string
   count: number
+}
+
+export interface ReturnRequest {
+  id: number
+  userId: number
+  orderId: number
+  productId: number
+  productName: string
+  productImageUrl: string
+  reason: string
+  status: string
+  createdAt: string
 }

@@ -1,0 +1,10 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\ComputerStore.Api",
+    "\\ComputerStore.Bll",
+    "\\ComputerStore.Dal"
+  ],
+  "SelectedNode": "\\ComputerStore.Api\\Program.cs",
+  "PreviewInSolutionExplorer": false
+}

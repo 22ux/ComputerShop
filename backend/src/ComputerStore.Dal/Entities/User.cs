@@ -15,4 +15,5 @@ public class User
     public Role? Role { get; set; }
     public ICollection<Order> Orders { get; set; } = new List<Order>();
     public ICollection<Cart> CartItems { get; set; } = new List<Cart>();
+    public ICollection<Review> Reviews { get; set; } = new List<Review>();
 }

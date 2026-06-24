@@ -29,7 +29,22 @@ public class ProductService(
             throw new AppException("Khong tim thay san pham.", 404);
         }
 
-        return MapDetail(product);
+        var detailDto = MapDetail(product);
+
+        if (!string.IsNullOrEmpty(product.ProductGroupId))
+        {
+            var variants = await productRepository.GetVariantsByGroupIdAsync(product.ProductGroupId, cancellationToken);
+            detailDto.Variants = variants.Select(v => new ProductVariantDto
+            {
+                Id = v.Id,
+                VariantName = v.VariantName ?? string.Empty,
+                Price = v.Price,
+                OldPrice = v.OldPrice,
+                ImageUrl = v.ImageUrl
+            }).ToList();
+        }
+
+        return detailDto;
     }
 
     public async Task<IReadOnlyCollection<string>> GetBrandsAsync(CancellationToken cancellationToken = default)
@@ -45,9 +60,13 @@ public class ProductService(
             Description = request.Description.Trim(),
             Specification = request.Specification.Trim(),
             Price = request.Price,
+            OldPrice = request.OldPrice,
+            WarrantyMonths = request.WarrantyMonths,
             StockQuantity = request.StockQuantity,
             ImageUrl = request.ImageUrl.Trim(),
             Brand = request.Brand.Trim(),
+            ProductGroupId = string.IsNullOrWhiteSpace(request.ProductGroupId) ? null : request.ProductGroupId.Trim(),
+            VariantName = string.IsNullOrWhiteSpace(request.VariantName) ? null : request.VariantName.Trim(),
             CategoryId = request.CategoryId,
             CreatedAt = DateTime.UtcNow
         };
@@ -69,9 +88,13 @@ public class ProductService(
         product.Description = request.Description.Trim();
         product.Specification = request.Specification.Trim();
         product.Price = request.Price;
+        product.OldPrice = request.OldPrice;
+        product.WarrantyMonths = request.WarrantyMonths;
         product.StockQuantity = request.StockQuantity;
         product.ImageUrl = request.ImageUrl.Trim();
         product.Brand = request.Brand.Trim();
+        product.ProductGroupId = string.IsNullOrWhiteSpace(request.ProductGroupId) ? null : request.ProductGroupId.Trim();
+        product.VariantName = string.IsNullOrWhiteSpace(request.VariantName) ? null : request.VariantName.Trim();
         product.CategoryId = request.CategoryId;
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -137,9 +160,13 @@ public class ProductService(
         Name = product.Name,
         Description = product.Description,
         Price = product.Price,
+        OldPrice = product.OldPrice,
+        WarrantyMonths = product.WarrantyMonths,
         StockQuantity = product.StockQuantity,
         ImageUrl = product.ImageUrl,
         Brand = product.Brand,
+        ProductGroupId = product.ProductGroupId,
+        VariantName = product.VariantName,
         CategoryId = product.CategoryId,
         CategoryName = product.Category?.Name ?? string.Empty,
         IsDeleted = product.IsDeleted,
@@ -153,12 +180,45 @@ public class ProductService(
         Description = product.Description,
         Specification = product.Specification,
         Price = product.Price,
+        OldPrice = product.OldPrice,
+        WarrantyMonths = product.WarrantyMonths,
         StockQuantity = product.StockQuantity,
         ImageUrl = product.ImageUrl,
         Brand = product.Brand,
+        ProductGroupId = product.ProductGroupId,
+        VariantName = product.VariantName,
         CategoryId = product.CategoryId,
         CategoryName = product.Category?.Name ?? string.Empty,
         IsDeleted = product.IsDeleted,
-        CreatedAt = product.CreatedAt
+        CreatedAt = product.CreatedAt,
+        AverageRating = product.Reviews.Count > 0
+            ? (float)product.Reviews.Average(r => r.Rating)
+            : 0f,
+        Images = product.Images
+            .OrderBy(i => i.DisplayOrder)
+            .Select(i => new ProductImageDto
+            {
+                Id = i.Id,
+                ImageUrl = i.ImageUrl,
+                DisplayOrder = i.DisplayOrder
+            }).ToList(),
+        Attributes = product.Attributes
+            .Select(a => new ProductAttributeDto
+            {
+                Id = a.Id,
+                AttributeName = a.AttributeName,
+                AttributeValue = a.AttributeValue
+            }).ToList(),
+        Reviews = product.Reviews
+            .OrderByDescending(r => r.CreatedAt)
+            .Select(r => new ReviewDto
+            {
+                Id = r.Id,
+                UserId = r.UserId,
+                UserFullName = r.User?.FullName ?? "Anonymous",
+                Rating = r.Rating,
+                Comment = r.Comment,
+                CreatedAt = r.CreatedAt
+            }).ToList()
     };
 }

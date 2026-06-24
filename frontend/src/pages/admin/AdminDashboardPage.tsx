@@ -172,6 +172,32 @@ export default function AdminDashboardPage() {
         )}
       />
 
+      <Card className="overflow-hidden bg-gradient-to-r from-[#fff7ed] via-white to-[#fffaf4]">
+        <CardContent className="flex flex-col gap-4 p-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1e8] text-[#c2410c]">
+              <TriangleAlert className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="font-display text-xl font-semibold tracking-[-0.03em] text-slate-900">
+                Daily ops checklist
+              </div>
+              <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600">
+                Prioritize pending orders first, then restock low inventory items, and finally clean up product content to keep conversion healthy.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button asChild variant="secondary">
+              <Link to="/admin/products">Review products</Link>
+            </Button>
+            <Button asChild>
+              <Link to="/admin/orders">Manage orders</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {error ? (
         <div className="rounded-[24px] border border-[#fecaca] bg-[#fef2f2] px-5 py-4 text-sm text-[#b91c1c]">
           {error}
@@ -272,8 +298,8 @@ export default function AdminDashboardPage() {
           actions={<Badge variant="info">{numberFormatter.format(statuses.reduce((sum, item) => sum + item.count, 0))} orders</Badge>}
         >
           {statusChartData.length > 0 ? (
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_200px] lg:items-center">
-              <div className="h-[320px]">
+            <div className="flex flex-col gap-6">
+              <div className="h-[240px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -299,7 +325,7 @@ export default function AdminDashboardPage() {
                 </ResponsiveContainer>
               </div>
 
-              <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
                 {statusChartData.map((item) => (
                   <div key={item.status} className="flex items-center justify-between rounded-2xl border border-[#f1ebe5] bg-[#fcfaf8] px-4 py-3">
                     <div className="flex items-center gap-3">
@@ -322,7 +348,7 @@ export default function AdminDashboardPage() {
         </AdminChartCard>
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(340px,0.8fr)]">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]">
         <AdminChartCard
           title="Top selling products"
           description="Best performers by quantity sold. Useful for stock planning and merchandising."
@@ -488,32 +514,6 @@ export default function AdminDashboardPage() {
           ))}
         </DataTable>
       </div>
-
-      <Card className="overflow-hidden bg-gradient-to-r from-[#fff7ed] via-white to-[#fffaf4]">
-        <CardContent className="flex flex-col gap-4 p-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1e8] text-[#c2410c]">
-              <TriangleAlert className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="font-display text-xl font-semibold tracking-[-0.03em] text-slate-900">
-                Daily ops checklist
-              </div>
-              <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600">
-                Prioritize pending orders first, then restock low inventory items, and finally clean up product content to keep conversion healthy.
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Button asChild variant="secondary">
-              <Link to="/admin/products">Review products</Link>
-            </Button>
-            <Button asChild>
-              <Link to="/admin/orders">Manage orders</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

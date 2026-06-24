@@ -13,6 +13,7 @@ public class OrderService(
     IUserRepository userRepository,
     ICartRepository cartRepository,
     IOrderRepository orderRepository,
+    IInventoryItemRepository inventoryItemRepository,
     IUnitOfWork unitOfWork) : IOrderService
 {
     private static readonly Dictionary<OrderStatus, OrderStatus[]> AllowedTransitions = new()
@@ -65,15 +66,30 @@ public class OrderService(
 
             foreach (var item in cartItems)
             {
+                var availableSerials = await inventoryItemRepository.GetAvailableItemsAsync(item.ProductId, item.Quantity, cancellationToken);
+                if (availableSerials.Count < item.Quantity)
+                {
+                    throw new AppException($"San pham {item.Product!.Name} khong du ton kho Seri.");
+                }
+
                 item.Product!.StockQuantity -= item.Quantity;
-                createdOrder.OrderDetails.Add(new OrderDetail
+                
+                var orderDetail = new OrderDetail
                 {
                     ProductId = item.ProductId,
                     Product = item.Product,
                     Quantity = item.Quantity,
                     UnitPrice = item.Product.Price,
                     SubTotal = item.Quantity * item.Product.Price
-                });
+                };
+
+                foreach (var serial in availableSerials)
+                {
+                    serial.Status = "Sold";
+                    orderDetail.InventoryItems.Add(serial);
+                }
+
+                createdOrder.OrderDetails.Add(orderDetail);
             }
 
             createdOrder.TotalAmount = createdOrder.OrderDetails.Sum(x => x.SubTotal);
@@ -121,7 +137,7 @@ public class OrderService(
                 throw new AppException("Chi duoc huy don o trang thai Pending hoac Confirmed.");
             }
 
-            RestoreStock(order);
+            await RestoreStockAsync(order, cancellationToken);
             order.Status = OrderStatus.Cancelled;
 
             return OrderMapper.ToDetailDto(order);
@@ -172,7 +188,7 @@ public class OrderService(
 
             if (newStatus == OrderStatus.Cancelled)
             {
-                RestoreStock(order);
+                await RestoreStockAsync(order, cancellationToken);
             }
 
             order.Status = newStatus;
@@ -216,8 +232,17 @@ public class OrderService(
         return parsed;
     }
 
-    private static void RestoreStock(Order order)
+    private async Task RestoreStockAsync(Order order, CancellationToken cancellationToken)
     {
+        var orderDetailIds = order.OrderDetails.Select(d => d.Id).ToList();
+        var inventoryItems = await inventoryItemRepository.GetByOrderDetailIdsAsync(orderDetailIds, cancellationToken);
+
+        foreach (var item in inventoryItems)
+        {
+            item.Status = "InStock";
+            item.OrderDetailId = null;
+        }
+
         foreach (var detail in order.OrderDetails)
         {
             if (detail.Product is not null)

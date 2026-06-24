@@ -12,6 +12,11 @@ public class ComputerStoreDbContext(DbContextOptions<ComputerStoreDbContext> opt
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderDetail> OrderDetails => Set<OrderDetail>();
     public DbSet<Cart> Carts => Set<Cart>();
+    public DbSet<ProductImage> ProductImages => Set<ProductImage>();
+    public DbSet<ProductAttribute> ProductAttributes => Set<ProductAttribute>();
+    public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
+    public DbSet<ReturnRequest> ReturnRequests => Set<ReturnRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -96,6 +101,74 @@ public class ComputerStoreDbContext(DbContextOptions<ComputerStoreDbContext> opt
                 .WithMany(x => x.CartItems)
                 .HasForeignKey(x => x.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ProductImage>(entity =>
+        {
+            entity.Property(x => x.ImageUrl).HasMaxLength(500);
+            entity.HasOne(x => x.Product)
+                .WithMany(x => x.Images)
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ProductAttribute>(entity =>
+        {
+            entity.Property(x => x.AttributeName).HasMaxLength(100);
+            entity.Property(x => x.AttributeValue).HasMaxLength(255);
+            entity.HasOne(x => x.Product)
+                .WithMany(x => x.Attributes)
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Review>(entity =>
+        {
+            entity.Property(x => x.Comment).HasMaxLength(1000);
+            entity.ToTable(t => t.HasCheckConstraint("CK_Review_Rating", "[Rating] >= 1 AND [Rating] <= 5"));
+            entity.HasOne(x => x.Product)
+                .WithMany(x => x.Reviews)
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(x => x.User)
+                .WithMany(x => x.Reviews)
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<InventoryItem>(entity =>
+        {
+            entity.Property(x => x.SerialNumber).HasMaxLength(100);
+            entity.Property(x => x.Status).HasMaxLength(50);
+            entity.HasIndex(x => x.SerialNumber).IsUnique();
+            
+            entity.HasOne(x => x.Product)
+                .WithMany(x => x.InventoryItems)
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.OrderDetail)
+                .WithMany(x => x.InventoryItems)
+                .HasForeignKey(x => x.OrderDetailId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<ReturnRequest>(entity =>
+        {
+            entity.Property(x => x.Reason).HasMaxLength(1000);
+            entity.Property(x => x.Status).HasMaxLength(50);
+            entity.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Order)
+                .WithMany()
+                .HasForeignKey(x => x.OrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Product)
+                .WithMany()
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

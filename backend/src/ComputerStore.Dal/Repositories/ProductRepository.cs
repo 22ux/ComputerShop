@@ -82,7 +82,12 @@ public class ProductRepository(ComputerStoreDbContext context) : IProductReposit
             query = query.Include(x => x.Category);
         }
 
-        return await query.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        return await query
+            .Include(x => x.Images.OrderBy(i => i.DisplayOrder))
+            .Include(x => x.Attributes)
+            .Include(x => x.Reviews.OrderByDescending(r => r.CreatedAt))
+                .ThenInclude(r => r.User)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
     public Task<List<string>> GetBrandsAsync(CancellationToken cancellationToken = default)
@@ -107,4 +112,13 @@ public class ProductRepository(ComputerStoreDbContext context) : IProductReposit
 
     public Task AddAsync(Product product, CancellationToken cancellationToken = default)
         => context.Products.AddAsync(product, cancellationToken).AsTask();
+
+    public Task<List<Product>> GetVariantsByGroupIdAsync(string productGroupId, CancellationToken cancellationToken = default)
+    {
+        return context.Products
+            .AsNoTracking()
+            .Where(x => x.ProductGroupId == productGroupId && !x.IsDeleted)
+            .OrderBy(x => x.Price)
+            .ToListAsync(cancellationToken);
+    }
 }

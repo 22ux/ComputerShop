@@ -68,6 +68,8 @@ public static class DbSeeder
                 Description = "Laptop gaming man hinh 16 inch, tan so quet 165Hz, phu hop esport.",
                 Specification = "Intel Core i7-13650HX, RTX 4060, RAM 16GB, SSD 1TB, 16 inch FHD 165Hz",
                 Price = 38990000m,
+                OldPrice = 42990000m,
+                WarrantyMonths = 24,
                 StockQuantity = 8,
                 ImageUrl = "https://images.unsplash.com/photo-1517336714739-489689fd1ca8?auto=format&fit=crop&w=1200&q=80",
                 Brand = "ASUS",
@@ -80,6 +82,8 @@ public static class DbSeeder
                 Description = "May tinh xach tay van phong ben bi, pin tot, thiet ke gon.",
                 Specification = "Intel Core i5-13420H, Intel Graphics, RAM 16GB, SSD 512GB, 14 inch FHD",
                 Price = 18990000m,
+                OldPrice = 20990000m,
+                WarrantyMonths = 12,
                 StockQuantity = 12,
                 ImageUrl = "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=1200&q=80",
                 Brand = "Lenovo",
@@ -92,6 +96,8 @@ public static class DbSeeder
                 Description = "Bo PC gaming cao cap cho AAA game va livestream.",
                 Specification = "Ryzen 7 7700, RTX 4070 Super, RAM 32GB, SSD 1TB, PSU 750W",
                 Price = 42990000m,
+                OldPrice = 45000000m,
+                WarrantyMonths = 36,
                 StockQuantity = 5,
                 ImageUrl = "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=1200&q=80",
                 Brand = "Custom Build",
@@ -104,6 +110,8 @@ public static class DbSeeder
                 Description = "Man hinh 27 inch QHD, 180Hz, mau sac tot cho game va thiet ke.",
                 Specification = "27 inch, QHD, IPS, 180Hz, 1ms, HDR10",
                 Price = 7990000m,
+                OldPrice = 8590000m,
+                WarrantyMonths = 24,
                 StockQuantity = 15,
                 ImageUrl = "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=1200&q=80",
                 Brand = "LG",
@@ -116,6 +124,8 @@ public static class DbSeeder
                 Description = "Ban phim co hot-swap ket noi da che do, layout TKL.",
                 Specification = "Bluetooth 5.1, USB-C, hot-swap, RGB, switch tactile",
                 Price = 2590000m,
+                OldPrice = 2890000m,
+                WarrantyMonths = 12,
                 StockQuantity = 20,
                 ImageUrl = "https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?auto=format&fit=crop&w=1200&q=80",
                 Brand = "Keychron",
@@ -128,6 +138,8 @@ public static class DbSeeder
                 Description = "Laptop gaming tam trung, tan nhiet on, de nang cap.",
                 Specification = "Intel Core i5-13450HX, RTX 4050, RAM 16GB, SSD 512GB, 15.6 inch 120Hz",
                 Price = 27990000m,
+                OldPrice = null,
+                WarrantyMonths = 12,
                 StockQuantity = 9,
                 ImageUrl = "https://images.unsplash.com/photo-1603302576837-37561b2e2302?auto=format&fit=crop&w=1200&q=80",
                 Brand = "Dell",
@@ -137,6 +149,23 @@ public static class DbSeeder
         };
 
         await context.Products.AddRangeAsync(products);
+        await context.SaveChangesAsync();
+
+        var inventoryItems = new List<InventoryItem>();
+        foreach (var product in products)
+        {
+            for (int i = 0; i < product.StockQuantity; i++)
+            {
+                inventoryItems.Add(new InventoryItem
+                {
+                    ProductId = product.Id,
+                    SerialNumber = $"SN-{product.Id:D4}-{i + 1:D4}",
+                    Status = "InStock",
+                    ImportDate = product.CreatedAt.AddHours(1)
+                });
+            }
+        }
+        await context.InventoryItems.AddRangeAsync(inventoryItems);
         await context.SaveChangesAsync();
 
         var seededOrder = new Order

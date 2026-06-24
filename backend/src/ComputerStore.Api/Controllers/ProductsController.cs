@@ -6,7 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace ComputerStore.Api.Controllers;
 
 [Route("api/products")]
-public class ProductsController(IProductService productService) : BaseApiController
+public class ProductsController(
+    IProductService productService,
+    IInventoryService inventoryService) : BaseApiController
 {
     [HttpGet]
     public async Task<ActionResult<PagedResult<ProductSummaryDto>>> Get([FromQuery] ProductFilterRequest request, CancellationToken cancellationToken)
@@ -19,4 +21,8 @@ public class ProductsController(IProductService productService) : BaseApiControl
     [HttpGet("{id:int}")]
     public async Task<ActionResult<ProductDetailDto>> GetById(int id, CancellationToken cancellationToken)
         => Ok(await productService.GetByIdAsync(id, cancellationToken: cancellationToken));
+
+    [HttpGet("check-warranty/{serialNumber}")]
+    public async Task<ActionResult<WarrantyStatusDto>> CheckWarranty(string serialNumber, CancellationToken cancellationToken)
+        => Ok(await inventoryService.CheckWarrantyAsync(serialNumber, cancellationToken));
 }

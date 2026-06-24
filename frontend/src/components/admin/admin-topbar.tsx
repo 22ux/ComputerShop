@@ -73,6 +73,14 @@ export function AdminTopbar({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
           />
         </form>
 
+        <Link
+          to="/"
+          className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[#ece6de] bg-white text-slate-600 transition hover:border-[#fdba74] hover:text-[#c2410c]"
+          title="Back to Storefront"
+        >
+          <Store className="h-4.5 w-4.5" />
+        </Link>
+
         <button
           type="button"
           className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[#ece6de] bg-white text-slate-600 transition hover:text-[#c2410c]"

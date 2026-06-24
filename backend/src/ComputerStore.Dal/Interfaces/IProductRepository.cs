@@ -11,4 +11,5 @@ public interface IProductRepository
     Task<bool> ExistsByNameAsync(string name, int? excludeId = null, CancellationToken cancellationToken = default);
     Task<int> CountActiveAsync(CancellationToken cancellationToken = default);
     Task AddAsync(Product product, CancellationToken cancellationToken = default);
+    Task<List<Product>> GetVariantsByGroupIdAsync(string productGroupId, CancellationToken cancellationToken = default);
 }
