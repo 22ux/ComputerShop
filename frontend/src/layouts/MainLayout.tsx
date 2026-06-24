@@ -155,7 +155,6 @@ export default function MainLayout() {
                 to={item.to}
                 className={({ isActive }) => cn('nav-pill gap-2 whitespace-nowrap', isActive && 'nav-pill-active')}
               >
-                {item.icon}
                 {item.label}
               </NavLink>
             ))}

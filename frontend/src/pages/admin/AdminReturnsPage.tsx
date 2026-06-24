@@ -1,16 +1,14 @@
-import { CheckCircle2, RefreshCcw, XCircle } from 'lucide-react'
+import { CheckCircle2, RefreshCcw, X, XCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import {
-  AdminButton,
-  AdminEmptyState,
-  AdminPageHeader,
-  AdminStatusBadge,
-  AdminSurface,
-  AdminTable,
-  AdminModal,
-  AdminInput
-} from '../../components/admin/admin-ui'
+import { AdminEmptyState } from '../../components/admin/admin-empty-state'
+import { AdminLoadingSkeleton } from '../../components/admin/admin-loading-skeleton'
+import { AdminPageHeader } from '../../components/admin/admin-page-header'
+import { AdminStatusBadge } from '../../components/admin/admin-status-badge'
+import { DataTable } from '../../components/admin/data-table'
+import { Button } from '../../components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
+import { Input } from '../../components/ui/input'
 import http from '../../lib/http'
 import { formatDate, getErrorMessage } from '../../lib/utils'
 import type { ReturnRequest } from '../../types'
@@ -91,130 +89,154 @@ export default function AdminReturnsPage() {
         description="Manage warranty claims, approve returns, and process product exchanges."
       />
 
-      <AdminSurface>
-        <AdminTable
-          columns={['ID', 'Customer', 'Order', 'Product', 'Reason', 'Status', 'Date', 'Actions']}
-          loading={loading}
-          data={requests}
-          emptyState={
-            <AdminEmptyState
-              icon={<RefreshCcw className="h-6 w-6" />}
-              title="No return requests"
-              description="There are currently no return requests from customers."
-            />
-          }
-          renderRow={(request) => (
-            <tr key={request.id}>
-              <td className="whitespace-nowrap px-4 py-4 text-sm font-medium text-slate-900">
+      {loading ? (
+        <AdminLoadingSkeleton rows={7} />
+      ) : (
+        <DataTable
+          isEmpty={requests.length === 0}
+          emptyTitle="No return requests"
+          emptyDescription="There are currently no return requests from customers."
+          columns={(
+            <tr>
+              <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">ID</th>
+              <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Customer</th>
+              <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Order</th>
+              <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Product</th>
+              <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Reason</th>
+              <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Status</th>
+              <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Date</th>
+              <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 text-right">Actions</th>
+            </tr>
+          )}
+        >
+          {requests.map((request) => (
+            <tr key={request.id} className="transition hover:bg-[#fcfaf8]">
+              <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-900">
                 #{request.id}
               </td>
-              <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-500">
+              <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
                 User #{request.userId}
               </td>
-              <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-500">
+              <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
                 Order #{request.orderId}
               </td>
-              <td className="px-4 py-4 text-sm text-slate-500">
+              <td className="px-6 py-4 text-sm text-slate-500">
                 <div className="flex items-center gap-3">
                   <img src={request.productImageUrl} alt={request.productName} className="h-10 w-10 rounded-lg object-cover" />
                   <span className="max-w-[200px] truncate">{request.productName}</span>
                 </div>
               </td>
-              <td className="px-4 py-4 text-sm text-slate-500 max-w-[200px] truncate">
+              <td className="px-6 py-4 text-sm text-slate-500 max-w-[200px] truncate">
                 {request.reason}
               </td>
-              <td className="whitespace-nowrap px-4 py-4">
+              <td className="whitespace-nowrap px-6 py-4">
                 <AdminStatusBadge status={request.status} />
               </td>
-              <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-500">
+              <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
                 {formatDate(request.createdAt)}
               </td>
-              <td className="whitespace-nowrap px-4 py-4 text-sm">
-                <div className="flex items-center gap-2">
+              <td className="whitespace-nowrap px-6 py-4 text-sm text-right">
+                <div className="flex items-center justify-end gap-2">
                   {request.status === 'Pending' && (
                     <>
-                      <AdminButton
+                      <Button
                         size="sm"
-                        variant="secondary"
+                        variant="outline"
                         disabled={processingId === request.id}
                         onClick={() => void updateStatus(request.id, 'Approved')}
-                        className="text-green-600 hover:text-green-700"
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
                       >
                         <CheckCircle2 className="h-4 w-4 mr-1" />
                         Approve
-                      </AdminButton>
-                      <AdminButton
+                      </Button>
+                      <Button
                         size="sm"
-                        variant="danger"
+                        variant="destructive"
                         disabled={processingId === request.id}
                         onClick={() => void updateStatus(request.id, 'Rejected')}
                       >
                         <XCircle className="h-4 w-4 mr-1" />
                         Reject
-                      </AdminButton>
+                      </Button>
                     </>
                   )}
                   {request.status === 'Approved' && (
-                    <AdminButton
+                    <Button
                       size="sm"
-                      variant="primary"
+                      variant="default"
                       disabled={processingId === request.id}
                       onClick={() => openExchangeModal(request)}
                     >
                       <RefreshCcw className="h-4 w-4 mr-1" />
                       Process Exchange
-                    </AdminButton>
+                    </Button>
                   )}
                 </div>
               </td>
             </tr>
-          )}
-        />
-      </AdminSurface>
+          ))}
+        </DataTable>
+      )}
 
-      <AdminModal
-        isOpen={isExchangeModalOpen}
-        onClose={() => setIsExchangeModalOpen(false)}
-        title="Process Product Exchange"
-      >
-        <form onSubmit={handleProcessExchange} className="space-y-4">
-          <div className="rounded-lg bg-blue-50 p-4 mb-4">
-            <h4 className="font-medium text-blue-900">Exchange Details</h4>
-            <p className="text-sm text-blue-700 mt-1">Order #{selectedRequest?.orderId} - {selectedRequest?.productName}</p>
-          </div>
-          
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Old Serial Number (Defective)</label>
-            <AdminInput
-              value={oldSerial}
-              onChange={(e) => setOldSerial(e.target.value)}
-              placeholder="e.g. SN-OLD-123"
-              required
-            />
-            <p className="mt-1 text-xs text-slate-500">This serial must be currently assigned to the order.</p>
-          </div>
+      {isExchangeModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="relative w-full max-w-xl animate-in fade-in zoom-in-95 duration-200">
+            <Button
+              type="button"
+              size="icon"
+              className="absolute -right-3 -top-3 z-10 h-8 w-8 rounded-full bg-red-500 text-white shadow-md hover:bg-red-600"
+              onClick={() => setIsExchangeModalOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <Card className="max-h-[90vh] overflow-y-auto shadow-2xl">
+              <CardHeader>
+                <CardTitle>Process Product Exchange</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleProcessExchange} className="space-y-4">
+                  <div className="rounded-lg bg-blue-50 p-4 mb-4">
+                    <h4 className="font-medium text-blue-900">Exchange Details</h4>
+                    <p className="text-sm text-blue-700 mt-1">Order #{selectedRequest?.orderId} - {selectedRequest?.productName}</p>
+                  </div>
+                  
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">Old Serial Number (Defective)</label>
+                    <Input
+                      value={oldSerial}
+                      onChange={(e) => setOldSerial(e.target.value)}
+                      placeholder="e.g. SN-OLD-123"
+                      required
+                    />
+                    <p className="mt-1 text-xs text-slate-500">This serial must be currently assigned to the order.</p>
+                  </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">New Serial Number (Replacement)</label>
-            <AdminInput
-              value={newSerial}
-              onChange={(e) => setNewSerial(e.target.value)}
-              placeholder="e.g. SN-NEW-456"
-              required
-            />
-            <p className="mt-1 text-xs text-slate-500">This serial must be currently InStock.</p>
-          </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">New Serial Number (Replacement)</label>
+                    <Input
+                      value={newSerial}
+                      onChange={(e) => setNewSerial(e.target.value)}
+                      placeholder="e.g. SN-NEW-456"
+                      required
+                    />
+                    <p className="mt-1 text-xs text-slate-500">This serial must be currently InStock.</p>
+                  </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <AdminButton type="button" variant="secondary" onClick={() => setIsExchangeModalOpen(false)}>
-              Cancel
-            </AdminButton>
-            <AdminButton type="submit" disabled={processingId === selectedRequest?.id}>
-              Confirm Exchange
-            </AdminButton>
+                  <div className="flex justify-end gap-3 pt-4">
+                    <Button type="button" variant="outline" onClick={() => setIsExchangeModalOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={processingId === selectedRequest?.id}>
+                      Confirm Exchange
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
           </div>
-        </form>
-      </AdminModal>
+        </div>
+      ) : null}
     </div>
   )
 }
+
