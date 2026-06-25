@@ -1,4 +1,4 @@
-import { CreditCard, MapPin, PackageCheck, Phone, XCircle } from 'lucide-react'
+import { CreditCard, MapPin, PackageCheck, Phone, XCircle, X } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import {
@@ -19,6 +19,10 @@ export default function OrdersPage() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [returningProductId, setReturningProductId] = useState<number | null>(null)
+
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false)
+  const [returnItem, setReturnItem] = useState<{ productId: number; productName: string } | null>(null)
+  const [returnReason, setReturnReason] = useState('')
 
   const loadOrderDetail = async (orderId: number) => {
     try {
@@ -55,6 +59,28 @@ export default function OrdersPage() {
     void loadOrders()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const handleReturnSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!returnItem || !selectedOrder || !returnReason.trim()) return
+
+    try {
+      setReturningProductId(returnItem.productId)
+      await http.post('/returnrequests', {
+        orderId: selectedOrder.id,
+        productId: returnItem.productId,
+        reason: returnReason
+      })
+      toast.success('Yêu cầu bảo hành/đổi trả đã được gửi thành công.')
+      setIsReturnModalOpen(false)
+      setReturnReason('')
+      setReturnItem(null)
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setReturningProductId(null)
+    }
+  }
 
   const stats = useMemo(() => {
     const activeOrders = orders.filter((order) => ['Pending', 'Confirmed', 'Shipping'].includes(order.status)).length
@@ -179,23 +205,10 @@ export default function OrdersPage() {
                           variant="secondary"
                           size="sm"
                           disabled={returningProductId === item.productId}
-                          onClick={async () => {
-                            const reason = window.prompt(`Please enter the reason for returning ${item.productName}:`)
-                            if (!reason || reason.trim() === '') return
-                            
-                            try {
-                              setReturningProductId(item.productId)
-                              await http.post('/returnrequests', {
-                                orderId: selectedOrder.id,
-                                productId: item.productId,
-                                reason: reason
-                              })
-                              toast.success('Return request submitted successfully.')
-                            } catch (err) {
-                              toast.error(getErrorMessage(err))
-                            } finally {
-                              setReturningProductId(null)
-                            }
+                          onClick={() => {
+                            setReturnItem({ productId: item.productId, productName: item.productName })
+                            setReturnReason('')
+                            setIsReturnModalOpen(true)
                           }}
                         >
                           {returningProductId === item.productId ? 'Submitting...' : 'Request Return / Warranty'}
@@ -249,6 +262,48 @@ export default function OrdersPage() {
           )}
         </StoreSurface>
       </div>
+
+      {isReturnModalOpen && returnItem ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="relative w-full max-w-lg animate-in fade-in zoom-in-95 duration-200">
+            <button
+              type="button"
+              className="absolute -right-3 -top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white shadow-md hover:bg-red-600 transition"
+              onClick={() => setIsReturnModalOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <StoreSurface className="overflow-hidden shadow-2xl">
+              <div className="bg-[#f8fcff] border-b border-[#dceff7] px-6 py-4">
+                <h3 className="font-semibold text-lg text-slate-900">Yêu cầu bảo hành / đổi trả</h3>
+                <p className="text-sm text-slate-500 mt-1">{returnItem.productName}</p>
+              </div>
+              <div className="p-6">
+                <form onSubmit={handleReturnSubmit} className="space-y-4">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">Lý do bảo hành / đổi trả</label>
+                    <textarea
+                      value={returnReason}
+                      onChange={(e) => setReturnReason(e.target.value)}
+                      placeholder="Mô tả chi tiết tình trạng sản phẩm (ví dụ: máy không lên nguồn, móp méo khi nhận hàng...)"
+                      className="w-full rounded-[16px] border border-[#dceff7] p-4 text-sm outline-none transition focus:border-[#008ecc] focus:ring-4 focus:ring-[#008ecc]/10 min-h-[120px]"
+                      required
+                    />
+                  </div>
+                  <div className="flex justify-end gap-3 pt-2">
+                    <StoreButton type="button" variant="secondary" onClick={() => setIsReturnModalOpen(false)}>
+                      Hủy bỏ
+                    </StoreButton>
+                    <StoreButton type="submit" disabled={returningProductId === returnItem.productId}>
+                      {returningProductId === returnItem.productId ? 'Đang gửi...' : 'Gửi yêu cầu'}
+                    </StoreButton>
+                  </div>
+                </form>
+              </div>
+            </StoreSurface>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

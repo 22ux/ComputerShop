@@ -1,7 +1,6 @@
 import { CheckCircle2, RefreshCcw, X, XCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { AdminEmptyState } from '../../components/admin/admin-empty-state'
 import { AdminLoadingSkeleton } from '../../components/admin/admin-loading-skeleton'
 import { AdminPageHeader } from '../../components/admin/admin-page-header'
 import { AdminStatusBadge } from '../../components/admin/admin-status-badge'
@@ -17,7 +16,7 @@ export default function AdminReturnsPage() {
   const [requests, setRequests] = useState<ReturnRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [processingId, setProcessingId] = useState<number | null>(null)
-  
+
   // Exchange Modal State
   const [isExchangeModalOpen, setIsExchangeModalOpen] = useState(false)
   const [selectedRequest, setSelectedRequest] = useState<ReturnRequest | null>(null)
@@ -126,7 +125,7 @@ export default function AdminReturnsPage() {
                   <span className="max-w-[200px] truncate">{request.productName}</span>
                 </div>
               </td>
-              <td className="px-6 py-4 text-sm text-slate-500 max-w-[200px] truncate">
+              <td className="px-6 py-4 text-sm text-slate-500 whitespace-normal min-w-[250px]" title={request.reason}>
                 {request.reason}
               </td>
               <td className="whitespace-nowrap px-6 py-4">
@@ -199,7 +198,7 @@ export default function AdminReturnsPage() {
                     <h4 className="font-medium text-blue-900">Exchange Details</h4>
                     <p className="text-sm text-blue-700 mt-1">Order #{selectedRequest?.orderId} - {selectedRequest?.productName}</p>
                   </div>
-                  
+
                   <div>
                     <label className="mb-1 block text-sm font-medium text-slate-700">Old Serial Number (Defective)</label>
                     <Input

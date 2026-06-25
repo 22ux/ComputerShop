@@ -4,6 +4,7 @@ import {
   Shapes,
   ShoppingCart,
   Users,
+  RefreshCcw,
 } from 'lucide-react'
 
 export const adminNavigation = [
@@ -42,6 +43,13 @@ export const adminNavigation = [
     icon: ShoppingCart,
     keywords: ['orders', 'shipping', 'workflow'],
   },
+  {
+    to: '/admin/returns',
+    label: 'Returns',
+    description: 'Warranty & RMA',
+    icon: RefreshCcw,
+    keywords: ['returns', 'warranty', 'rma', 'exchange'],
+  },
 ] as const
 
 export const adminRouteMeta: Record<string, { title: string; description: string }> = {
@@ -64,5 +72,9 @@ export const adminRouteMeta: Record<string, { title: string; description: string
   '/admin/orders': {
     title: 'Order management',
     description: 'Track the full order lifecycle and update statuses with less friction.',
+  },
+  '/admin/returns': {
+    title: 'Return Requests (RMA)',
+    description: 'Manage warranty claims, approve returns, and process product exchanges.',
   },
 }
